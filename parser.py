@@ -7,6 +7,10 @@ Grammar:
 
 from typing import Optional
 from dataclasses import dataclass
+import nltk
+nltk.download('punkt')        # Required for tokenization
+nltk.download('treebank')     # Contains sample parse tree
+from nltk import Tree as NLTKTree
 
 
 @dataclass
@@ -37,6 +41,7 @@ class Parser:
 
     def __init__(self, input: str):
         self.input = input.replace(" ", "")
+        self.cursor = 0 
 
     def current(self) -> Optional[str]:
         if not self.is_end_of_input():
@@ -115,7 +120,19 @@ class Parser:
             raise SyntaxError(
                 f"Expected operator at position {self.cursor} but found {current}"
             )
-
+    
+    def to_nltk_tree(self, node: TreeNode) -> NLTKTree:
+        """Converte a AST mantendo os parênteses estritos da gramática"""
+        if isinstance(node, Leaf):
+            return NLTKTree('E', [node.value])
+            
+        elif isinstance(node, Expression):
+            left_tree = self.to_nltk_tree(node.left)
+            op_tree = NLTKTree('Op', [node.operator])
+            right_tree = self.to_nltk_tree(node.right)
+            
+            # Os parênteses voltam como filhos diretos de E!
+            return NLTKTree('E', ['(', left_tree, op_tree, right_tree, ')'])
 
 cases = [
     "a",
@@ -126,13 +143,23 @@ cases = [
     "a+a",  # missing parentheses
     "(a+a",  # missing closing paren
     "a(+a)",  #  misplaced a
+    "((a*a)+(a/a))",
 ]
 
+
 for expr in cases:
-    print("-=" * 15)
-    print(f"Input: {expr}")
+    print("-=" * 20)
+    print(f"Input: {expr}\n")
 
     parser = Parser(expr)
     ast = parser.try_parse()
-
-    print(ast)
+    
+    if ast:
+        tree = parser.to_nltk_tree(ast)
+        print("Abrindo a árvore na interface gráfica...")
+        
+        # Substituímos o pretty_print() pelo draw()
+        tree.draw() 
+        
+    else:
+        print("[red]Falha ao gerar árvore devido a erro de sintaxe.[/red]")
