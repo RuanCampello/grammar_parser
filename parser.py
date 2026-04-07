@@ -122,7 +122,7 @@ class Parser:
             )
     
     def to_nltk_tree(self, node: TreeNode) -> NLTKTree:
-        """Converte a AST mantendo os parênteses estritos da gramática"""
+        """Função para fazer a árvore sintática mantendo os parênteses estritos da gramática"""
         if isinstance(node, Leaf):
             return NLTKTree('E', [node.value])
             
@@ -131,7 +131,7 @@ class Parser:
             op_tree = NLTKTree('Op', [node.operator])
             right_tree = self.to_nltk_tree(node.right)
             
-            # Os parênteses voltam como filhos diretos de E!
+            # Os parênteses voltam como filhos diretos de E
             return NLTKTree('E', ['(', left_tree, op_tree, right_tree, ')'])
 
 cases = [
@@ -144,6 +144,15 @@ cases = [
     "(a+a",  # missing closing paren
     "a(+a)",  #  misplaced a
     "((a*a)+(a/a))",
+    "(a + (a * (a - a)))",
+    "(((a + a) * a) - a)",
+    "(a + (a * a))",
+    "(a - (a / a))",
+    "((a + a) * a)",
+    "((a - a) / a)",
+    "(-a)", # missing first operand
+    "((a a))", #missing operator
+    "()", #completely empty
 ]
 
 
@@ -158,8 +167,8 @@ for expr in cases:
         tree = parser.to_nltk_tree(ast)
         print("Abrindo a árvore na interface gráfica...")
         
-        # Substituímos o pretty_print() pelo draw()
+        # fazendo com que se abra a vizualização das árvores
         tree.draw() 
         
     else:
-        print("[red]Falha ao gerar árvore devido a erro de sintaxe.[/red]")
+        print("Falha ao gerar árvore devido a erro de sintaxe.")
